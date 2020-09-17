@@ -23,6 +23,19 @@ std::vector<std::string> GenerateData(std::string data) {
     return generatedData;
 }
 
+gil::rgb8_image_t EncodeImage(gil::rgb8_image_t image, std::string message) {
+
+    std::vector<std::string> binaryMessage = GenerateData(message);
+
+    std::vector<std::string>::iterator it;
+
+    for (it = binaryMessage.begin(); it < binaryMessage.end(); it++) {
+        std::cout << *it << std::endl;
+    }
+
+    return image;
+}
+
 void Encode() {
 
     std::string imgpath;
@@ -37,33 +50,22 @@ void Encode() {
     std::cout << "Please type a message to be converted into binary code" << std::endl;
     std::cin >> message;
 
-    
-
     if (message.empty()) {
         throw std::invalid_argument("The message can't be nothing.");
     }
 
-
-    
+    EncodeImage(image, message);
 }
 
-gil::rgb8_image_t EncodeImage(gil::rgb8_image_t image, std::string message) {
+
+
+//std::tuple<gil::rgb8_pixel_t, gil::rgb8_pixel_t, gil::rgb8_pixel_t> ModifyPixels(gil::rgb8_image_t image, std::string message) {
     //Not Implemented Yet
-}
-
-std::tuple<gil::rgb8_pixel_t, gil::rgb8_pixel_t, gil::rgb8_pixel_t> ModifyPixels(gil::rgb8_image_t image, std::string message) {
-    //Not Implemented Yet
-}
+//}
 
 
 int main()
 {
-    //gil::rgb8_image_t img;
-    //gil::read_image("POP_Cover.png", img, gil::png_tag{});
-    //gil::rgb8_image_t square250x250(250, 250);
-    //gil::resize_view(gil::const_view(img), gil::view(square250x250), gil::bilinear_sampler{});
-    //gil::write_view("out-resize.png", gil::const_view(square250x250), gil::png_tag{});
-
     int a;
     std::cout << ":: Welcome to Stegosaurus C++ Edition ::" << std::endl << "1. Encode \n2. Decode" << std::endl;
 
