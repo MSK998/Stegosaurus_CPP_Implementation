@@ -10,8 +10,6 @@
 
 #include <bitset>
 
-//#pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
-
 namespace gil = boost::gil;
 
 std::vector<std::string> GenerateData(std::string data) {
@@ -50,11 +48,11 @@ void Encode() {
 }
 
 gil::rgb8_image_t EncodeImage(gil::rgb8_image_t image, std::string message) {
-    //Not Implemented yet
+    //Not Implemented Yet
 }
 
-std::tuple<gil::rgb8_pixel_t, gil::rgb8_pixel_t, gil::rgb8_pixel_t> ModifyPixels() {
-
+std::tuple<gil::rgb8_pixel_t, gil::rgb8_pixel_t, gil::rgb8_pixel_t> ModifyPixels(gil::rgb8_image_t image, std::string message) {
+    //Not Implemented Yet
 }
 
 
