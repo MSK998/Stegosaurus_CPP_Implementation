@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <iterator>
+#include <sstream>
 #include <boost/gil.hpp>
 #include <boost/gil/extension/io/png.hpp>
 #include <boost/gil/extension/numeric/sampler.hpp>
@@ -21,15 +22,43 @@ namespace gil = boost::gil;
 /// <returns>
 /// Vector of binary equivelent strings for each character.
 /// </returns>
-std::vector<std::string> GenerateData(std::string data) {
-
+std::string EncodeMessage(std::string data) {
+    std::vector<std::string>::iterator characterIterator;
     std::vector<std::string> generatedData;
+    std::string binaryString;
 
     for (char& _char : data) {
         generatedData.push_back(std::bitset<8>(_char).to_string());
     }
+    for (characterIterator = generatedData.begin(); characterIterator != generatedData.end(); characterIterator++) {
+        binaryString.append(*characterIterator);
+    }
 
-    return generatedData;
+    return binaryString;
+}
+
+/// <summary>
+/// Takes a binary string and converts it to ASCII text.
+/// </summary>
+/// <param name="data"></param>
+/// <returns>
+/// Decoded message as string.
+/// </returns>
+std::string DecodeMessage(std::string data) {
+
+    std::stringstream sstream(data);
+    std::string message;
+
+    while (sstream.good())
+    {
+        std::bitset<8> bits;
+        sstream >> bits;
+        char c = char(bits.to_ulong());
+        message += c;
+    }
+
+    return message;
+
 }
 
 int OddEven(int bitValue, int pixelValue) {
@@ -52,15 +81,10 @@ int OddEven(int bitValue, int pixelValue) {
 
 gil::rgb8_image_t EncodeImage(gil::rgb8_image_t image, std::string message) {
 
-    std::vector<std::string> binaryMessage = GenerateData(message);
-    std::vector<std::string>::iterator characterIterator;
-
-    std::string binaryString;
+    std::string binaryString = EncodeMessage(message);
     std::string::iterator binaryStringIterator;
 
-    for (characterIterator = binaryMessage.begin(); characterIterator != binaryMessage.end(); characterIterator++) {
-        binaryString.append(*characterIterator);
-    }
+  
 
     std::cout << binaryString << std::endl;
 
@@ -76,57 +100,31 @@ gil::rgb8_image_t EncodeImage(gil::rgb8_image_t image, std::string message) {
 
     while (b != v.end()) {
         gil::rgb8_pixel_t pixel = *b;
-        //std::cout << (int)pixel[0] << ", " << (int)pixel[1] << ", " << (int)pixel[2] << std::endl;
         
-        if (binaryStringIterator == binaryString.end() - 2) {
-            // If True the loop will break out
-            messageDone = true;
+        pixel[0] = OddEven(*binaryStringIterator, (int)pixel[0]);
+        std::cout << (int)pixel[0] % 2 << std::endl;
+        std::advance(binaryStringIterator, 1);
 
-            pixel[0] = OddEven(*binaryStringIterator, (int)pixel[0]);
-            std::cout << (int)pixel[0] << std::endl;
-            std::advance(binaryStringIterator, 1);
+        pixel[1] = OddEven(*binaryStringIterator, (int)pixel[1]);
+        std::cout << (int)pixel[1] % 2 << std::endl;
+        std::advance(binaryStringIterator, 1);
 
-            pixel[1] = OddEven(*binaryStringIterator, (int)pixel[1]);
-            std::cout << (int)pixel[1] << std::endl;
-            std::advance(binaryStringIterator, 1);
-
+        if (binaryStringIterator == binaryString.end()) {
             if ((int)pixel[2] % 2 == 0) {
                 pixel[2] = (int)pixel[2] - 1;
+                std::cout << (int)pixel[2] % 2 << std::endl;
+                *b = pixel;
+                break;
             }
-
-            break;
         }
-
-        else if (!messageDone) {
-            if ((b - v.begin()) % 3 == 0 && b != v.begin()) {
-
-                pixel[0] = OddEven(*binaryStringIterator, (int)pixel[0]);
-                std::cout << (int)pixel[0] << std::endl;
-                std::advance(binaryStringIterator, 1);
-                
-                pixel[1] = OddEven(*binaryStringIterator, (int)pixel[1]);
-                std::cout << (int)pixel[1] << std::endl;
-                std::advance(binaryStringIterator, 1);
-
-                if ((int)pixel[2] % 2 != 0) {
-                    std::cout << "Moving to next 3 pixels" << std::endl;
-                    pixel[2] = (int)pixel[2] - 1;
-                }
-
-            }
-            else {
-
-
-                for (int i = 0; i < 3; i++) {
-                    pixel[i] = OddEven(*binaryStringIterator, (int)pixel[i]);
-                    std::cout << (int)pixel[i] << std::endl;
-                    std::advance(binaryStringIterator, 1);
-                }
+        else {
+            if ((int)pixel[2] % 2 != 0) {
+                std::cout << (int)pixel[2] % 2 << std::endl;
+                pixel[2] = (int)pixel[2] - 1;
             }
         }
 
         *b = pixel;
-
         b++;
     }
     
@@ -157,26 +155,66 @@ void Encode() {
     gil::write_view("encode_out.png", view(encodedImage), gil::png_tag{});
 }
 
+void Decode() {
+    std::string imgpath;
+    std::string data;
+
+    // Test image: C:\Users\mwsco\source\repos\Stegosaurus_CPP_Implementation\encode_out.png
+    std::cout << "Please enter the full filepath, with extension:" << std::endl;
+    std::cin >> imgpath;
+
+    gil::rgb8_image_t image;
+    gil::read_image(imgpath, image, gil::png_tag{});
+
+    gil::rgb8_view_t imageView = view(image);
+    auto v = gil::view(image);
+    auto b = v.begin();
+
+    bool messageDone = false;
+
+
+    while (b != v.end()) {
+        gil::rgb8_pixel_t pixel = *b;
+        
+        for (int i = 0; i < 2; i++) {
+            if ((int)pixel[i] % 2 == 0) {
+                data.push_back('0');
+            }
+            else {
+                data.push_back('1');
+            }
+        }
+
+        if ((int)pixel[2] % 2 != 0) {
+            break;
+        }
+
+        b++;
+    }
+
+    std::cout << DecodeMessage(data) << std::endl;
+    std::cout << data << std::endl;
+}
 
 int main()
 {
-
     int a;
     std::cout << ":: Welcome to Stegosaurus C++ Edition ::" << std::endl << "1. Encode \n2. Decode" << std::endl;
 
     std::cin >> a;
 
     if (a == 1) {
-        std::cout << "You picked Encode!";
+        std::cout << "You picked Encode!" << std::endl;
         Encode();
         return 0;
     } 
     else if (a == 2){
-        std::cout << "You picked Decode!";
+        std::cout << "You picked Decode!" << std::endl;
+        Decode();
         return 0;
     }
     else {
-        std::cout << "Invalid Number!";
+        std::cout << "Invalid Number!" << std::endl;
         return 0;
     }
 
